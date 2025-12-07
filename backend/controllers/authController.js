@@ -1,40 +1,59 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const Admin = require("../models/adminModel");
+// controllers/authController.js
+const mysql = require('mysql2');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-module.exports = {
-  register: async (req, res) => {
-    try {
-      const { username, password } = req.body;
+// Create MySQL connection
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'your_password',
+  database: 'employee_db'
+});
 
-      const hashed = await bcrypt.hash(password, 10);
-      await Admin.createAdmin(username, hashed);
+// REGISTER
+exports.register = (req, res) => {
+  const { name, email, password } = req.body;
 
-      res.json({ message: "Admin registered successfully" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
+  // Hash password
+  bcrypt.hash(password, 10, (err, hash) => {
+    if (err) return res.status(500).json({ error: err.message });
 
-  login: async (req, res) => {
-    try {
-      const { username, password } = req.body;
+    const query = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
+    db.query(query, [name, email, hash], (err, result) => {
+      if (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+          return res.status(400).json({ error: 'Email already exists' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ message: 'User registered successfully' });
+    });
+  });
+};
 
-      const admin = await Admin.findAdminByUsername(username);
-      if (!admin) return res.status(400).json({ error: "User not found" });
+// LOGIN
+exports.login = (req, res) => {
+  const { email, password } = req.body;
 
-      const isMatch = await bcrypt.compare(password, admin.password);
-      if (!isMatch) return res.status(400).json({ error: "Invalid password" });
+  const query = 'SELECT * FROM users WHERE email = ?';
+  db.query(query, [email], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) return res.status(400).json({ error: 'User not found' });
 
-      const token = jwt.sign(
-        { id: admin.id, username: admin.username },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
+    const user = results[0];
 
-      res.json({ token });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
+    // Compare password
+    bcrypt.compare(password, user.password, (err, isMatch) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!isMatch) return res.status(400).json({ error: 'Incorrect password' });
+
+      // Generate JWT token (optional)
+      const token = jwt.sign({ id: user.id, email: user.email }, 'your_jwt_secret', {
+        expiresIn: '1h'
+      });
+
+      res.status(200).json({ message: 'Login successful', token });
+    });
+  });
 };
