@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Employee Dashboard</h2>
+
+  <form id="addEmployeeForm">
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="text" id="phone" placeholder="Phone">
+    <input type="text" id="department" placeholder="Department">
+    <input type="text" id="designation" placeholder="Designation">
+    <input type="number" id="salary" placeholder="Salary">
+    <button type="submit">Add Employee</button>
+  </form>
+
+  <h3>Employee List</h3>
+  <table id="employeeTable" border="1">
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Dept</th><th>Designation</th><th>Salary</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
